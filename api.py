@@ -7,7 +7,7 @@ from urllib.parse import parse_qs, urlsplit
 
 DOWNLOAD_FIELD = "download_url"
 CURRENT_PAGE_ONLY = False
-SUPPORT_EXPIRED = False
+SUPPORT_EXPIRED = True
 
 # The fixture has 120 matched orders and five orders outside the current filter.
 MATCHED_ORDERS = list(range(1, 121))
