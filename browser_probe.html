@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Order export E2E</title>
+<pre id="report">PENDING</pre>
+<script type="module">
+async function until(read) {
+  for (let attempt = 0; attempt < 100; attempt++) {
+    const value = read();
+    if (value) return value;
+    await new Promise(resolve => setTimeout(resolve, 25));
+  }
+  throw new Error("The order page did not finish");
+}
+
+async function exportFromPage(expired) {
+  const frame = document.createElement("iframe");
+  frame.src = "/?expired=" + Number(expired);
+  document.body.append(frame);
+  const button = await until(() => {
+    const candidate = frame.contentDocument?.querySelector("#export");
+    return candidate && !candidate.disabled ? candidate : null;
+  });
+  button.click();
+  const page = frame.contentDocument;
+  const status = await until(() => page.querySelector("#status").value);
+  const download = page.querySelector("#download");
+  const csv = download.hidden ? null : await fetch(download.href).then(response => response.text());
+  return {status, rows: page.querySelectorAll("#orders li").length, csv};
+}
+
+try {
+  const ready = await exportFromPage(false);
+  const expired = await exportFromPage(true);
+  const ids = ready.csv?.trim().split("\n").slice(1).map(Number) ?? [];
+  document.querySelector("#report").textContent = JSON.stringify({
+    visible: ready.rows, ids, ready: ready.status, expired: expired.status, expired_download: Boolean(expired.csv),
+  });
+} catch (error) {
+  document.querySelector("#report").textContent = JSON.stringify({error: error.message});
+}
+</script>

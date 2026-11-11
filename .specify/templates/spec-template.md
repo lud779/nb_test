@@ -1,0 +1,1 @@
+# Synthetic Spec Kit template

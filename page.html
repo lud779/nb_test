@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Orders</title>
+<h1>Matched orders</h1>
+<ol id="orders"></ol>
+<button id="export" disabled>Export orders</button>
+<a id="download" hidden download>Download CSV</a>
+<output id="status"></output>
+<script type="module">
+const list = document.querySelector("#orders");
+const button = document.querySelector("#export");
+const download = document.querySelector("#download");
+const status = document.querySelector("#status");
+const orders = await fetch("/orders?matched=1").then(response => response.json());
+for (const id of orders.ids) {
+  const row = document.createElement("li");
+  row.textContent = id;
+  list.append(row);
+}
+button.disabled = false;
+button.onclick = async () => {
+  const expired = new URL(location.href).searchParams.get("expired") === "1";
+  const result = await fetch("/export?matched=1&expired=" + Number(expired)).then(response => response.json());
+  status.value = result.status;
+  download.hidden = !result.download_url || result.status !== "ready";
+  if (!download.hidden) download.href = result.download_url;
+};
+</script>

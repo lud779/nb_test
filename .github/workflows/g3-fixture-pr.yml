@@ -1,0 +1,33 @@
+name: Open synthetic fixture PR
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        type: choice
+        options: [codex/g3-orders, codex/g3-v2-spec]
+        required: true
+      sha:
+        type: string
+        required: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  open:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Open the selected fixture PR as the test bot
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE: ${{ inputs.branch }}
+          SHA: ${{ inputs.sha }}
+        run: |
+          case "$SOURCE" in codex/g3-orders|codex/g3-v2-spec) ;; *) exit 1 ;; esac
+          current=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$SOURCE" --jq '.object.sha')
+          test "$current" = "$SHA"
+          gh api "repos/$GITHUB_REPOSITORY/pulls" -f base=codex/g3-base -f head="$SOURCE" \
+            -f title="G3 synthetic order fixture ($SOURCE)" \
+            -f body="Synthetic order export acceptance fixture." --jq '.html_url'

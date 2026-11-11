@@ -1,0 +1,15 @@
+{
+  "evidence_rules": [
+    {"id":"g3-order-contract","task_ids":["T101"],"scenario_id":"E2E-contract","kind":"test",
+     "spec_paths":["specs/001-order-export/contract.json"]},
+    {"id":"g3-order-e2e","task_ids":["T102","T103"],"scenario_id":"E2E-export","kind":"test",
+     "spec_paths":["specs/001-order-export/export.json"]}
+  ],
+  "rules": [
+    {"id":"order-api","kind":"check","source":"specs/001-order-export/contract.json",
+     "text":"Return the approved download_url field.","task_ids":["T101"],"check_id":"g3-order-contract"},
+    {"id":"order-e2e","kind":"check","source":"specs/001-order-export/export.json",
+     "text":"Run the browser check for all 120 matches, with 20 visible per page.",
+     "task_ids":["T102","T103"],"check_id":"g3-order-e2e"}
+  ]
+}

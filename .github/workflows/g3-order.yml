@@ -1,0 +1,39 @@
+name: G3 synthetic order evidence
+
+on:
+  push:
+    branches: ['codex/g3-*']
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    name: g3-order-contract
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - run: python3 verify.py g3-order-contract --environment ubuntu-24.04 --report /tmp/g3-contract/report.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: ${{ always() }}
+        with:
+          name: g3-order-contract-${{ github.run_attempt }}
+          path: /tmp/g3-contract/report.json
+          retention-days: 14
+
+  browser:
+    name: g3-order-e2e
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - run: python3 verify.py g3-order-e2e --environment ubuntu-24.04 --report /tmp/g3-e2e/report.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: ${{ always() && !contains(github.event.head_commit.message, '[g3-withhold-report]') }}
+        with:
+          name: g3-order-e2e-${{ github.run_attempt }}
+          path: /tmp/g3-e2e/report.json
+          retention-days: 14
