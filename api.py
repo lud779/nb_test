@@ -5,7 +5,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
-DOWNLOAD_FIELD = "url"
+DOWNLOAD_FIELD = "download_url"
 CURRENT_PAGE_ONLY = True
 SUPPORT_EXPIRED = False
 
