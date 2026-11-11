@@ -17,12 +17,15 @@ jobs:
   contract:
     name: g3-order-contract
     runs-on: ubuntu-24.04
+    outputs:
+      artifact: ${{ steps.upload.outputs.artifact-id }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
       - run: python3 verify.py g3-order-contract --environment ubuntu-24.04 --report /tmp/g3-contract/report.json
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        id: upload
         if: ${{ always() }}
         with:
           name: g3-order-contract-${{ github.run_attempt }}
@@ -32,14 +35,43 @@ jobs:
   browser:
     name: g3-order-e2e
     runs-on: ubuntu-24.04
+    outputs:
+      artifact: ${{ steps.upload.outputs.artifact-id }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
       - run: python3 verify.py g3-order-e2e --environment ubuntu-24.04 --report /tmp/g3-e2e/report.json
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        id: upload
         if: ${{ always() && inputs.withhold_report != true }}
         with:
           name: g3-order-e2e-${{ github.run_attempt }}
           path: /tmp/g3-e2e/report.json
           retention-days: 14
+
+  publish_gate:
+    name: Publish order merge gates
+    runs-on: ubuntu-24.04
+    needs: [contract, browser]
+    if: ${{ always() }}
+    permissions:
+      statuses: write
+    steps:
+      - name: Publish the real job and artifact outcomes on the tested commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CONTRACT_RESULT: ${{ needs.contract.result }}
+          CONTRACT_ARTIFACT: ${{ needs.contract.outputs.artifact }}
+          BROWSER_RESULT: ${{ needs.browser.result }}
+          BROWSER_ARTIFACT: ${{ needs.browser.outputs.artifact }}
+        run: |
+          publish() {
+            state=failure
+            if [ "$2" = success ] && [ -n "$3" ]; then state=success; fi
+            gh api "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
+              -f context="$1" -f state="$state" \
+              -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" --silent
+          }
+          publish g3-gate-contract "$CONTRACT_RESULT" "$CONTRACT_ARTIFACT"
+          publish g3-gate-e2e "$BROWSER_RESULT" "$BROWSER_ARTIFACT"
