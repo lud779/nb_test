@@ -6,7 +6,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
 DOWNLOAD_FIELD = "download_url"
-CURRENT_PAGE_ONLY = True
+CURRENT_PAGE_ONLY = False
 SUPPORT_EXPIRED = False
 
 # The fixture has 120 matched orders and five orders outside the current filter.
